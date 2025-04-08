@@ -18,7 +18,7 @@ import {
 import { ZodValidationPipe } from 'nestjs-zod';
 
 @ApiTags('chats')
-@Controller('chat')
+@Controller('chats')
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
@@ -27,7 +27,7 @@ export class ChatController {
   @ApiOkResponse({
     description: 'The chat has been successfully created.',
     schema: {
-      example: { location: '/chat/ab11a8f1-290f-4f49-94f9-443f5b32f587' },
+      example: { location: '/chats/ab11a8f1-290f-4f49-94f9-443f5b32f587' },
     },
   })
   @ApiBadRequestResponse({ description: 'Invalid request body' })
@@ -35,10 +35,10 @@ export class ChatController {
     return this.chatService.create(createChatDto);
   }
 
-  @Get()
+  @Get('user/:userId')
   @ApiOkResponse({ description: 'Chats successfully retrieved.' })
   @ApiNotFoundResponse({ description: 'user not found' })
-  findAllOfAUser(@Body() userId: string) {
+  findAllOfAUser(@Param('userId') userId: string) {
     return this.chatService.findAllOfAUser(userId);
   }
 

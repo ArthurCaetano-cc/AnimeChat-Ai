@@ -33,7 +33,7 @@ export class MessagesController {
   @ApiOkResponse({ description: 'Messages retrieved successfully' })
   @ApiNotFoundResponse({ description: 'Chat not found' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  findAllOfAChat(@Param() chatId: string) {
+  findAllOfAChat(@Param('chatId') chatId: string) {
     return this.messagesService.findAllOfAChat(chatId);
   }
 }

@@ -15,11 +15,7 @@ export class ChatService {
   async create(createChatDto: CreateChatDto) {
     try {
       const { userId, agentId } = createChatDto;
-      const user = await this.prisma.user.findUnique({
-        where: {
-          id: userId,
-        },
-      });
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (!user) {
         throw new NotFoundException({
           message: 'User not found',
@@ -58,11 +54,7 @@ export class ChatService {
 
   async findAllOfAUser(userId: string) {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: {
-          id: userId,
-        },
-      });
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
       if (!user) {
         throw new NotFoundException({

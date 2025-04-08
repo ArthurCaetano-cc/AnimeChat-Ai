@@ -14,7 +14,7 @@ datasource db {
 }
 
 model Agent {
-  id                 String   @id @default(cuid())
+  id                 String   @id @default(uuid())
   name               String
   description        String
   defaultInstruction String
@@ -26,7 +26,7 @@ model Agent {
 }
 
 model User {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid())
   name      String
   email     String    @unique
   password  String
@@ -39,7 +39,7 @@ model User {
 }
 
 model Chat {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid())
   agentId   String
   userId    String
   createdAt DateTime  @default(now())
@@ -52,13 +52,13 @@ model Chat {
 }
 
 model Message {
-  id      String @id @default(cuid())
+  id      String  @id @default(uuid())
   chatId  String
-  Chat    Chat   @relation(fields: [chatId], references: [id])
+  Chat    Chat    @relation(fields: [chatId], references: [id])
   content String
-  userId  String
-  user    User   @relation(fields: [userId], references: [id])
-  role    Role   @default(USER)
+  userId  String?
+  user    User?   @relation(fields: [userId], references: [id])
+  role    Role    @default(USER)
 
   @@map("messages")
 }

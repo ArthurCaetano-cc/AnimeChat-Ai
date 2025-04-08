@@ -55,11 +55,18 @@ export class MessagesService {
     }
   }
 
-  findAllOfAChat(chatId: string) {
+  async findAllOfAChat(chatId: string) {
     try {
-      const messages = this.prisma.message.findMany({
+      const chat = await this.prisma.chat.findUnique({ where: { id: chatId } });
+      if (!chat) {
+        throw new NotFoundException({
+          message: 'Chat not found',
+        });
+      }
+
+      const messages = await this.prisma.message.findMany({
         where: {
-          chatId,
+          chatId: chat.id,
         },
       });
 

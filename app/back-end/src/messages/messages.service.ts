@@ -1,26 +1,74 @@
-import { Injectable } from '@nestjs/common';
-import { CreateMessageDto } from './dto/create-message.dto';
-import { UpdateMessageDto } from './dto/update-message.dto';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import { SendMessageDto } from './dto/send-message.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class MessagesService {
-  create(createMessageDto: CreateMessageDto) {
-    return 'This action adds a new message';
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(createMessageDto: SendMessageDto) {
+    try {
+      const { chatId, userId, content } = createMessageDto;
+
+      const chat = await this.prisma.chat.findUnique({
+        where: {
+          id: chatId,
+        },
+      });
+      if (!chat) {
+        throw new NotFoundException({
+          message: 'Chat not found',
+        });
+      }
+
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+      if (!user) {
+        throw new NotFoundException({
+          message: 'User not found',
+        });
+      }
+
+      const createdMessage = await this.prisma.message.create({
+        data: {
+          chatId: chat.id,
+          userId: user.id,
+          content,
+        },
+      });
+
+      return {
+        location: `/messages/${createdMessage.id}`,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: 'Internal server error',
+        error: (error as Error).message,
+      });
+    }
   }
 
-  findAll() {
-    return `This action returns all messages`;
-  }
+  findAllOfAChat(chatId: string) {
+    try {
+      const messages = this.prisma.message.findMany({
+        where: {
+          chatId,
+        },
+      });
 
-  findOne(id: number) {
-    return `This action returns a #${id} message`;
-  }
-
-  update(id: number, updateMessageDto: UpdateMessageDto) {
-    return `This action updates a #${id} message`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} message`;
+      return messages;
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: 'Internal server error',
+        error: (error as Error).message,
+      });
+    }
   }
 }

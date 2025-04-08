@@ -1,34 +1,39 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { MessagesService } from './messages.service';
-import { CreateMessageDto } from './dto/create-message.dto';
-import { UpdateMessageDto } from './dto/update-message.dto';
+import { SendMessageDto } from './dto/send-message.dto';
+import {
+  ApiBadRequestResponse,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
+@ApiTags('messages')
 @Controller('messages')
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
   @Post()
-  create(@Body() createMessageDto: CreateMessageDto) {
+  @ApiOkResponse({
+    description: 'Message created successfully',
+    schema: {
+      example: {
+        location: '/messages/1',
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Bad request' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  create(@Body() createMessageDto: SendMessageDto) {
     return this.messagesService.create(createMessageDto);
   }
 
-  @Get()
-  findAll() {
-    return this.messagesService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.messagesService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMessageDto: UpdateMessageDto) {
-    return this.messagesService.update(+id, updateMessageDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.messagesService.remove(+id);
+  @Get(':chatId')
+  @ApiOkResponse({ description: 'Messages retrieved successfully' })
+  @ApiNotFoundResponse({ description: 'Chat not found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal server error' })
+  findAllOfAChat(@Param() chatId: string) {
+    return this.messagesService.findAllOfAChat(chatId);
   }
 }

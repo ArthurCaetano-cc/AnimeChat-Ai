@@ -1,8 +1,10 @@
 'use client'
 
-import { fetchMessages, Message, sendMessage } from '@/lib/api/messages'
+import { fetchMessages, Message } from '@/lib/api/messages'
+import { connectToChatSocket } from '@/lib/socket'
+import { getUserIdFromToken } from '@/lib/utils/auth'
 import { useParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface formattedMessage {
   id: string
@@ -10,14 +12,23 @@ interface formattedMessage {
   content: string
 }
 
+interface sendMessageDTO {
+  content: string
+  userId: string
+  chatId: string
+  role: 'USER' | 'ASSISTANT'
+}
+
 export default function ChatDetailPage() {
   const { chatId } = useParams()
   const chatIdString = chatId as string
   const [messages, setMessages] = useState<formattedMessage[]>([])
   const [message, setMessage] = useState('')
+  const socketRef = useRef<any | null>(null)
 
   useEffect(() => {
-    // Simula uma API de mensagens do chat específico
+    if (!chatId) return
+
     fetchMessages(chatIdString).then((data) => {
       data.map((msg: Message) => {
         const formattedMessage: formattedMessage = {
@@ -28,11 +39,52 @@ export default function ChatDetailPage() {
         setMessages((prevMessages) => [...prevMessages, formattedMessage])
       })
     })
+
+    const socket = connectToChatSocket(chatIdString);
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('✅ Conectado ao chat via socket')
+    })
+
+    socket.on('message', (newMessage: Message) => {
+      setMessages((prev) => [...prev, {
+        id: newMessage.id,
+        sender: newMessage.role === 'USER' ? 'Você' : 'Agente',
+        content: newMessage.content,
+      }])
+    })
+
+    socket.on('error', (newMessage: Message) => {
+      console.error("Erro ao receber mensagem:", newMessage);
+    })
+
+    socket.on('disconnect', () => {
+      console.log('🔌 Desconectado do chat')
+    })
+
+    // Cleanup
+    return () => {
+      socket.disconnect();
+    }
   }, [chatId])
 
   const handleSend = async () => {
-    await sendMessage(message, chatIdString)
-    setMessage('')
+    if (socketRef.current && message.trim()) {
+      const userId = getUserIdFromToken()
+      if (!userId) throw new Error('User ID not found in token')
+
+      const newMessage: sendMessageDTO = {
+        content: message,
+        userId,
+        chatId: chatIdString,
+        role: 'USER',
+      }
+
+      socketRef.current.send(newMessage);
+      setMessages((prev) => [...prev, { id: newMessage.chatId, sender: 'Você', content: message }]);
+      setMessage("");
+    }
   }
 
   return (
